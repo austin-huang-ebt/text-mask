@@ -8,6 +8,7 @@ const nonDigitsRegExp = /\D+/g
 const number = 'number'
 const digitRegExp = /\d/
 const caretTrap = '[]'
+const allzoreRegExp = /^0*$/
 
 export default function createNumberMask({
   prefix = dollarSign,
@@ -20,7 +21,8 @@ export default function createNumberMask({
   requireDecimal = false,
   allowNegative = false,
   allowLeadingZeroes = false,
-  integerLimit = null
+  integerLimit = null,
+  autoFillDecimal = true
 } = {}) {
   const prefixLength = prefix && prefix.length || 0
   const suffixLength = suffix && suffix.length || 0
@@ -53,6 +55,7 @@ export default function createNumberMask({
     let integer
     let fraction
     let mask
+    let specialFraction
 
     // remove the suffix
     if (rawValue.slice(suffixLength * -1) === suffix) {
@@ -63,6 +66,9 @@ export default function createNumberMask({
       integer = rawValue.slice(rawValue.slice(0, prefixLength) === prefix ? prefixLength : 0, indexOfLastDecimal)
 
       fraction = rawValue.slice(indexOfLastDecimal + 1, rawValueLength)
+      if(fraction.length > decimalLimit &&  allzoreRegExp.test(fraction)){
+        specialFraction = true;
+      }
       fraction = convertToMask(fraction.replace(nonDigitsRegExp, emptyString))
     } else {
       if (rawValue.slice(0, prefixLength) === prefix) {
@@ -124,6 +130,31 @@ export default function createNumberMask({
 
     if (suffix.length > 0) {
       mask = mask.concat(suffix.split(emptyString))
+    }
+
+    const needAutoFillDecimal = autoFillDecimal && allowDecimal;
+    if(needAutoFillDecimal && rawValueLength > 0){
+      let fillLength = 0;
+      if(hasDecimal){
+        const decimalLength  = rawValue.substring(indexOfLastDecimal+1).length;
+        if(decimalLength < decimalLimit){
+           fillLength = decimalLimit - decimalLength;
+        }
+      }else{
+        mask.push(decimalSymbol, caretTrap);
+        fillLength = decimalLimit;
+      }
+
+      while (fillLength > 0) { 
+        mask.push('0')
+        fillLength--;
+               }
+               
+    }
+
+    if(specialFraction){
+      mask.splice(-1,1);
+      mask.push(minus);
     }
 
     return mask

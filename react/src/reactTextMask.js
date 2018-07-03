@@ -25,6 +25,10 @@ export default class MaskedInput extends React.PureComponent {
     this.initTextMask()
   }
 
+  componentDidUpdate() {
+    this.initTextMask()
+  }
+
   render() {
     const {render, ...props} = this.props
 
